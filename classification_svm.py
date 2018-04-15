@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 
 from os import path
 
-from sklearn import svm
+from sklearn import svm, metrics
+from sklearn.model_selection import train_test_split, cross_validate, KFold
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 currdir = path.dirname(__file__)
 
@@ -29,7 +31,12 @@ X = count_vectorizer.fit_transform(train_data["Category"])
 
 print X		# vector of all columns in identifiers
 
+# SUPPORT VECTOR MACHINE
 clf = svm.SVC()
+
+# FOREST CLASSIFIER
+#clf = RandomForestClassifier()
+
 clf.fit(X,y)
 
 y_pred = clf.predict(X)
@@ -39,3 +46,45 @@ predicted_categories = le.inverse_transform(y_pred)
 print predicted_categories
 
 print classification_report(y, y_pred, target_names=list(le.classes_))
+
+######################## CROSS VALIDATION ####################################################
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)	# split set
+
+print X_train.shape, y_train.shape
+print X_test.shape, y_test.shape
+
+
+scoring = ['precision_macro', 'recall_macro', 'f1_macro', 'accuracy']
+
+scores = cross_validate(clf, X, y, cv=10, scoring=scoring)
+
+sorted(scores.keys())
+
+# k-fold
+print "10-Fold..."
+kf = KFold(n_splits=10)
+for train, test in kf.split(X):		# train set kai test set split from original
+	print "%s %s" % (train, test)
+
+# precision, recall, f-measure, accuracy
+print "precision, recall, f-measure, accuracy ..."
+print scores
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
