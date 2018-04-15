@@ -3,6 +3,7 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
+from sklearn.naive_bayes import MultinomialNB
 from sklearn import preprocessing, svm
 import pandas as pd
 import numpy as np
@@ -32,10 +33,13 @@ X = count_vectorizer.fit_transform(train_data["Category"])
 print X		# vector of all columns in identifiers
 
 # SUPPORT VECTOR MACHINE
-clf = svm.SVC()
+#clf = svm.SVC()
 
 # FOREST CLASSIFIER
 #clf = RandomForestClassifier()
+
+# Naive Bayes
+clf = MultinomialNB()
 
 clf.fit(X,y)
 
@@ -70,21 +74,3 @@ for train, test in kf.split(X):		# train set kai test set split from original
 # precision, recall, f-measure, accuracy
 print "precision, recall, f-measure, accuracy ..."
 print scores
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
