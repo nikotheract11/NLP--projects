@@ -4,10 +4,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.decomposition import TruncatedSVD
 from sklearn import preprocessing, svm
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV
 
 from os import path
 
@@ -18,7 +20,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 currdir = path.dirname(__file__)
 
 train_data = pd.read_csv('./datasets/train_set.csv', sep="\t")	# './datasets/train_set.csv'
-#train_data = train_data[0:25]
+train_data = train_data[0:30]
+
 
 le = preprocessing.LabelEncoder()
 le.fit(train_data["Category"])			# "Category"
@@ -26,20 +29,33 @@ le.fit(train_data["Category"])			# "Category"
 y = le.transform(train_data["Category"])	# "Category"
 set(y)
 print y
-
+clf = svm.SVC()
 count_vectorizer = CountVectorizer(stop_words=ENGLISH_STOP_WORDS)
 X = count_vectorizer.fit_transform(train_data["Category"])
 
+ll=X
+# LSI
+svd = TruncatedSVD(n_components=4,n_iter=7, random_state=42)
+svd.fit(X)
+svd.fit_transform(X)
+
 print X		# vector of all columns in identifiers
+print "======================================================="
 
 # SUPPORT VECTOR MACHINE
+parameters = [
+  {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
+  {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
+ ]
+svc = svm.SVC()
+clf = GridSearchCV(svc, parameters)
 #clf = svm.SVC()
 
 # FOREST CLASSIFIER
 #clf = RandomForestClassifier()
 
-# Naive Bayes
-clf = MultinomialNB()
+# NAIVE BAYES
+#clf = MultinomialNB()
 
 clf.fit(X,y)
 
@@ -63,7 +79,7 @@ scoring = ['precision_macro', 'recall_macro', 'f1_macro', 'accuracy']
 
 scores = cross_validate(clf, X, y, cv=10, scoring=scoring)
 
-sorted(scores.keys())
+#sorted(scores.keys())
 
 # k-fold
 print "10-Fold..."
