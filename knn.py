@@ -14,6 +14,7 @@ from os import path
 from sklearn import svm, metrics
 from sklearn.model_selection import train_test_split, cross_validate, KFold
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from operator import itemgetter
 
 import math
 
@@ -26,29 +27,31 @@ def loadData_Preprocess():
     le = preprocessing.LabelEncoder()
     le.fit(train_data["Category"])
     y = le.transform(train_data["Category"])
-    set(y)
+    #set(y)
 
     count_vectorizer = CountVectorizer(stop_words=ENGLISH_STOP_WORDS)
     X = count_vectorizer.fit_transform(train_data["Category"])
+    X = list(X)
     return X,y,train_data
 
 # Calculate euclidean distance
-def euclideanDistance(instance1, instance2):
+def euclideanDistance(instance1, instance2):    # testInstance1 is number
     distance = 0
-    for x in range(5):  # 5 for components
-        distance += pow(instance1[x]-instance2,2)
+    #for x in range(4):  # 5 for components
+    print "instance1 = ", instance2[0][0][0]
+    distance += pow(instance1-instance2[4],2)
     result = math.sqrt(distance)
     return result
 
-def getNeighbours(train_data, testInstance, k):
+def getNeighbours(X, testInstance, k):
 	distances = []
-	for x in train_data:
+	for x in X:
 		dist = euclideanDistance(testInstance, x)
-		distances.append((x, dist))
-	distances.sort(key=operator.itemgetter(1))
+		distances.append([x, dist])
+	distances.sort(key = itemgetter(1))
 	neighbours = []
 	for x in range(k):
-		neighbors.append(distances[x][0])
+		neighbours.append(distances[x][0])
 	return neighbours
 
 # nearest_neighbour --> main
@@ -57,6 +60,10 @@ def nearest_neighbour():
     print "X = ", X
     print "y = ", y
 
-    #neighbours = getNeighbours(train_data,,3)
+    neighbours = []
+
+    for x in range(len(y)):
+        #print "x = ", x
+        neighbours.append(getNeighbours(X,y[x],3))
 
 nearest_neighbour()
