@@ -23,6 +23,7 @@ def loadData_Preprocess():
     currdir = path.dirname(__file__)
 
     train_data = pd.read_csv('./datasets/train_set.csv', sep="\t")	# './datasets/train_set.csv'
+    train_data = train_data[0:25]
 
     le = preprocessing.LabelEncoder()
     le.fit(train_data["Category"])
@@ -30,28 +31,28 @@ def loadData_Preprocess():
     #set(y)
 
     count_vectorizer = CountVectorizer(stop_words=ENGLISH_STOP_WORDS)
-    X = count_vectorizer.fit_transform(train_data["Category"])
-    X = list(X)
+    X = count_vectorizer.fit_transform(train_data["Content"])
+    #X = list(X)
+    X = X.toarray()
     return X,y,train_data
 
 # Calculate euclidean distance
-def euclideanDistance(instance1, instance2):    # testInstance1 is number
+def euclideanDistance(instance1, instance2, j):    # testInstance1 is number, instance2 is not
     distance = 0
-    #for x in range(4):  # 5 for components
-    print "instance1 = ", instance2[0][0][0]
-    distance += pow(instance1-instance2[4],2)
+    for i in range(j):  # j for components
+        distance += pow(instance1-instance2[i],2)
     result = math.sqrt(distance)
     return result
 
 def getNeighbours(X, testInstance, k):
-	distances = []
+	distances = [], j = 10
 	for x in X:
-		dist = euclideanDistance(testInstance, x)
+		dist = euclideanDistance(testInstance, x, j)  # j = length of row
 		distances.append([x, dist])
 	distances.sort(key = itemgetter(1))
 	neighbours = []
 	for x in range(k):
-		neighbours.append(distances[x][0])
+		neighbours.append(distances[x])
 	return neighbours
 
 # nearest_neighbour --> main
@@ -62,8 +63,9 @@ def nearest_neighbour():
 
     neighbours = []
 
-    for x in range(len(y)):
-        #print "x = ", x
-        neighbours.append(getNeighbours(X,y[x],3))
+    for yi in y:
+        neighbours.append(getNeighbours(X,yi,3))
+
+    print neighbours
 
 nearest_neighbour()
