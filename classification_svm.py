@@ -16,11 +16,18 @@ from os import path
 from sklearn import svm, metrics
 from sklearn.model_selection import train_test_split, cross_validate, KFold
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
-
+from gensim.parsing.porter import PorterStemmer
 currdir = path.dirname(__file__)
 
 train_data = pd.read_csv('./datasets/train_set.csv', sep="\t")	# './datasets/train_set.csv'
-train_data = train_data[0:200]
+train_data = train_data[0:25]
+stemmer = PorterStemmer()
+
+p = PorterStemmer()
+
+train_data["Content"] = train_data["Content"] + 4*(" "+train_data['Title'])
+
+train_data["Content"]=p.stem_documents(train_data["Content"])
 
 train,test = train_test_split(train_data,test_size=0.33,random_state=42)
 '''print train_data["Category"][0]
@@ -31,6 +38,7 @@ le = preprocessing.LabelEncoder()
 le.fit(train["Category"])			# "Category"
 
 y = le.transform(train["Category"])	# "Category"
+y_test = le.transform(test["Category"])
 set(y)
 print y
 #clf = svm.SVC()
@@ -57,21 +65,27 @@ ac = []
 
 d=[]
 from sklearn.decomposition import TruncatedSVD
-for i in range(1,100):
+for i in range(1,300):
     X=count_vectorizer.fit_transform(train['Content']+4*(" "+train["Title"]))
     lsa=TruncatedSVD(n_components=i)
     X=lsa.fit_transform(X)
-    clf = svm.SVC()
+    clf = RandomForestClassifier()
     clf.fit(X,y)
     scores=cross_val_score(clf,X,y,cv=10,scoring='accuracy')
     d.append(scores.mean())
 
-ss=range(1,30)
+ss=range(1,300)
 plt.plot(ss,d)
 plt.show()
 
 print X		# vector of all columns in identifiers
 print "======================================================="
+
+#clf = svm.SVC()
+X_test=lsa.fit_transform(X_test)
+y_pred = clf.predict(X_test)
+scores=cross_val_score(clf,X_test,y_test,cv=10,scoring='accuracy')
+print scores.mean()
 
 # SUPPORT VECTOR MACHINE
 '''parameters = [
