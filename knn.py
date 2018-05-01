@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import division
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import preprocessing, svm
+from sklearn.decomposition import TruncatedSVD
+from gensim.parsing.porter import PorterStemmer
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,87 +27,77 @@ def loadData_Preprocess():
     currdir = path.dirname(__file__)
 
     train_data = pd.read_csv('./datasets/train_set.csv', sep="\t")	# './datasets/train_set.csv'
-    train_data = train_data[0:25]
+    train_data = train_data[0:1000]
 
-    X_train, X_test, y_train, y_test = train_test_split(train_data, train_data["Category"], test_size=0.33, random_state=42)
-    print X_test, y_test
+    X_train, X_test, y_train, y_test = train_test_split(train_data, train_data["Category"], test_size=0.33, shuffle = True)
 
     le = preprocessing.LabelEncoder()
     le.fit(y_train)
     y = le.transform(y_train)
 
-    le2 = preprocessing.LabelEncoder()
-    le2.fit(y_test)
-    y2 = le2.transform(y_test)
+    le.fit(y_test)
+    y2 = le.transform(y_test)
 
-    count_vectorizer = CountVectorizer(stop_words=ENGLISH_STOP_WORDS)
+    p = PorterStemmer()
+    train_data["Content"] = train_data["Content"] + 4*(" "+train_data['Title'])
+    train_data["Content"] = p.stem_documents(train_data["Content"])
+
+    count_vectorizer = TfidfVectorizer(stop_words=ENGLISH_STOP_WORDS)
     X = count_vectorizer.fit_transform(X_train["Content"])
     X2 = count_vectorizer.fit_transform(X_test["Content"])
 
-    X = X.toarray()
-    X2 = X2.toarray()
+    lsa = TruncatedSVD(n_components=30)
+    X = lsa.fit_transform(X)
 
-    return X,X2,y,y2,train_data,le
+    lsa = TruncatedSVD(n_components=30)
+    X2 = lsa.fit_transform(X2)
+
+    return X,X2,y,y2
 
 # Calculate euclidean distance
-def euclideanDistance(instance1, instance2, j):    # testInstance1 is number, instance2 is not
-    distance = 0
-    for i in range(0,1):  # j for components
-        distance += pow(instance2[i]-instance1[i],2)
+def euclideanDistance(instance1, instance2, j):
+    distance = 0.0
+    for i in range(0,j):  # j for components
+        distance += pow(instance1[i]-instance2[i],2)
     result = math.sqrt(distance)
     return result
 
-def getNeighbours(X, testInstance, k):
-	distances = []; j = len(X[0])
+def getNeighbours(X, testInstance, y, k):
+	distances = []
 	for i in range(0,len(X)):
-		dist = euclideanDistance(testInstance, X[i], j)  # j = length of row
-		distances.append([X[i], dist, i])
+		dist = euclideanDistance(testInstance, X[i], len(testInstance))  # j = length of row
+		distances.append([dist, y[i]])
 
-	distances.sort(key = itemgetter(1))
+	distances.sort(key = itemgetter(0))
 	neighbours = []
 	for i in range(k):
-		neighbours.append(distances[i])
-        #print "i = ", distances[i]
+		neighbours.append(distances[i][1])
 	return neighbours
 
-def majorityvote(neighbours, X, le, y, k):
-    categories = []
-    s = []
-    for i in range(k):
-        categories.append(y[neighbours[0][i][2]])
-    #print "categories = ", categories
-    #s = le.inverse_transform(categories)    # contains all categories
-    #print "s = ", s
-    cnt = Counter(categories)
-    print cnt
+def majorityvote(neighbours, X, y, k):
+    cnt = Counter(neighbours[0])
     return cnt.most_common(1)[0][0]
 
 # nearest_neighbour --> main
-def nearest_neighbour():
-    X, X2, y, y2, train_data, le = loadData_Preprocess()
-    print "X = ", X
-    print "X2 = ", X2
-    print "y = ", y
-    print "len(y2) = ", len(y2)
-    print "len(X2) = ", len(X2)
+def nearest_neighbour(k=6):
+    X, X2, y, y2, = loadData_Preprocess()
 
     neighbours = []
-    k = 2
 
     success = 0;
     failure = 0;
 
     for i in range(0,len(X2)):    # for every testInstance
         neighbours = []
-        neighbours.append(getNeighbours(X,X2[i],k))    # returns k list items with 2 components
-        ela = majorityvote(neighbours, X, le, y, k) # the answer
-        print ela, " ", y2[i]
-        if ela == y2[i]:
+        neighbours.append(getNeighbours(X, X2[i], y, k))    # returns k list items with 2 components
+        mv = majorityvote(neighbours, X, y, k) # the answer
+        if mv == y2[i]:
             success += 1
         else:
             failure += 1
 
     var = success/len(y2)
     print "success rate = ", var
+    return var
 
 nearest_neighbour()
