@@ -20,7 +20,7 @@ from gensim.parsing.porter import PorterStemmer
 currdir = path.dirname(__file__)
 
 train_data = pd.read_csv('./datasets/train_set.csv', sep="\t")	# './datasets/train_set.csv'
-train_data = train_data[0:25]
+train_data = train_data[0:1000]
 stemmer = PorterStemmer()
 
 p = PorterStemmer()
@@ -40,12 +40,12 @@ le.fit(train["Category"])			# "Category"
 y = le.transform(train["Category"])	# "Category"
 y_test = le.transform(test["Category"])
 set(y)
-print y
+#print y
 #clf = svm.SVC()
 
 count_vectorizer = CountVectorizer(stop_words=ENGLISH_STOP_WORDS)
 #X = count_vectorizer.fit_transform(train["Content"]+4*(" "+train["Title"]))
-X_test = count_vectorizer.fit_transform(test["Content"]+4*(" "+test["Title"]))
+X_test = count_vectorizer.fit_transform(test["Content"])
 
 # LSI
 ac = []
@@ -65,8 +65,8 @@ ac = []
 
 d=[]
 from sklearn.decomposition import TruncatedSVD
-for i in range(1,300):
-    X=count_vectorizer.fit_transform(train['Content']+4*(" "+train["Title"]))
+for i in range(1,100):
+    X=count_vectorizer.fit_transform(train['Content'])
     lsa=TruncatedSVD(n_components=i)
     X=lsa.fit_transform(X)
     clf = RandomForestClassifier()
@@ -74,11 +74,11 @@ for i in range(1,300):
     scores=cross_val_score(clf,X,y,cv=10,scoring='accuracy')
     d.append(scores.mean())
 
-ss=range(1,300)
+ss=range(1,100)
 plt.plot(ss,d)
 plt.show()
 
-print X		# vector of all columns in identifiers
+#print X		# vector of all columns in identifiers
 print "======================================================="
 
 #clf = svm.SVC()
